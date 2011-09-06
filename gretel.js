@@ -1,4 +1,4 @@
-var Router = (function() {
+var Gretel = (function() {
 	// The timer used to monitor the URL
 	var tmr = 0;
 	var fieldSeparator = "/";
@@ -127,7 +127,7 @@ var Router = (function() {
 	}
 	
 	// Install the router
-	if(typeof(Router_disable_autostart) === "undefined")
+	if(typeof(Gretel_disable_autostart) === "undefined")
 		registerEvent('load', installRouter);
 	
 	return {
