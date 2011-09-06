@@ -3,7 +3,7 @@
 <head>
 	<title></title>
 	<meta charset="utf8">
-	<script src="router.js"></script>
+	<script src="gretel.js"></script>
 	<script>
 		var User = (function() {
 			var actions = {
@@ -20,11 +20,11 @@
 				if(typeof(actions[action]) !== "undefined")
 					(actions[action])(params);
 				else
-					Router.forward("page", "notfound");
+					Gretel.forward("page", "notfound");
 			};
 		})();
 	
-		Router.registerRoute("user", "id", User);
+		Gretel.registerRoute("user", "id", User);
 	</script>
 </head>
 <body>
