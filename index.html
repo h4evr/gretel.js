@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<meta charset="utf8">
+	<script src="router.js"></script>
+	<script>
+		var User = (function() {
+			var actions = {
+				"new" : function(params) {
+					
+				},
+				
+				"edit" : function(params) {
+					
+				}
+			};
+			
+			return function(action, params) {
+				if(typeof(actions[action]) !== "undefined")
+					(actions[action])(params);
+				else
+					Router.forward("page", "notfound");
+			};
+		})();
+	
+		Router.registerRoute("user", "id", User);
+	</script>
+</head>
+<body>
+
+</body>
+</html>
