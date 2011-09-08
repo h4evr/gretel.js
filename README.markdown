@@ -24,34 +24,4 @@ Meaning that the developer will be able to simply define routes and what to do w
 
 ## Example
 
-    <html>
-    <head>
-        <title></title>
-        <meta charset="utf8">
-        <script src="gretel.js"></script>
-        <script>
-            var User = (function() {
-                var actions = {
-                    "new" : function(params) {
-                        
-                    },
-                    
-                    "edit" : function(params) {
-                        
-                    }
-                };
-                
-                return function(action, params) {
-                    if(typeof(actions[action]) !== "undefined")
-                        (actions[action])(params);
-                    else
-                        Gretel.forward("page", "notfound");
-                };
-            })();
-
-            Gretel.registerRoute("user", "id", User);
-        </script>
-    </head>
-    <body>
-    </body>
-    </html> 
+See `index.html` for an usage example.
