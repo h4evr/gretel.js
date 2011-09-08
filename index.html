@@ -5,26 +5,37 @@
 	<meta charset="utf8">
 	<script src="gretel.js"></script>
 	<script>
-		var User = (function() {
-			var actions = {
-				"new" : function(params) {
-					
-				},
-				
-				"edit" : function(params) {
-					
-				}
-			};
-			
-			return function(action, params) {
-				if(typeof(actions[action]) !== "undefined")
-					(actions[action])(params);
-				else
-					Gretel.forward("page", "notfound");
+		
+		var UserController = (function() {
+			// Make actions public.
+			// This is by no means a requirement. You can make only the calls to registerRoute.
+			return {
+				'new' : Gretel.registerRoute("user/new", function (params) {
+							console.log('New user!');
+						}),
+
+				'delete' : Gretel.registerRoute("user/delete/{id}", function (params) {
+							console.log('Delete user: ' + params['id']);
+						}),
+
+				'register' : Gretel.registerRoute("user/register", function (params) {
+							Gretel.forward('user/new');
+						}),
+
+				'edit' : Gretel.registerRoute("user/edit/[{id}]", function (params) {
+							if(typeof(params['id']) === "undefined" || params['id'].length == 0) {
+								Gretel.redirect('user/new');
+							}
+
+							console.log('Edit user: ' + params['id']);
+						}),
+
+				'view' : Gretel.registerRoute("user/[view]/{id}", function (params) {
+							console.log('View user: ' + params['id']);
+						})
 			};
 		})();
-	
-		Gretel.registerRoute("user", "id", User);
+
 	</script>
 </head>
 <body>

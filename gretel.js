@@ -14,51 +14,130 @@ var Gretel = (function() {
 			if(query[0] == '/')
 				query = query.substr(1);
 		}
+
+		return query;
+	}
+	
+	/** 
+	 * Try to find a route that matches the given url
+	 * @returns The matching route info or false if none was found.
+	 */
+	function findMatchingRoute(url) {
+		// Split the URL by the separators
+		var urlParams = url.split(fieldSeparator);
 		
-		var fields = query.split(fieldSeparator);
-		if(fields.length == 1) {
-			fields.unshift("default");
-		}
-		return fields;
-	}
-	
-	function registerRoute(name, params, handler, obj) {
-		handlers[name] = [handler, obj, params.split(fieldSeparator)];
-	}
-	
-	function redirect(module, action, params) {
-		if(typeof(handlers[module]) !== "undefined") {
-			var paramsIds = handlers[module][2];
-			var paramsStr = [];
+		// Check if a set of possible matches exist
+		if(typeof(handlers[urlParams[0]]) !== "undefined") {
+			var variables = {};
 			
-			paramsIds.forEach(function(name) {
-				if(typeof params[name] !== "undefined") {
-					paramsStr.push(params[name]);
+			// Try to match the URL to each rule
+			for(var j = 0, len = handlers[urlParams[0]].length; j < len; ++j) {
+				var route = handlers[urlParams[0]][j];
+				var routeParams = route[0];
+				var optionalCount = route[1];
+				
+				if(routeParams.length - optionalCount > urlParams.length) {
+					continue;
 				}
-			});
-			
-			paramsStr = paramsStr.join(fieldSeparator);
-			
-			var url = "#/" + module + fieldSeparator + action;
-			if(paramsStr.length > 0) {
-				url += fieldSeparator + paramsStr;
+				
+				var isAMatch = true;
+				var passed = 0;
+				
+				for(var i = 0; i < routeParams.length; ++i) {
+					var p = routeParams[i];
+					
+					if(p['variable']) {
+						variables[p['name']] = urlParams[i - passed];
+					} else {
+						if(p['name'] !== urlParams[i - passed]) {
+							if(!p['optional']) {
+								isAMatch = false;
+								continue;
+							} else {
+								++passed;
+							}
+						}
+					}
+				}
+				
+				if(isAMatch) {
+					return [route, variables];
+				}
 			}
 			
-			window.location.href = url;
-			
-			throw new Error("StopProcessingHandlerException");
+			return false;
 		} else {
-			forward("page", "notfound");
+			// No possible matches found
+			return false;
 		}
 	}
 	
-	function forward(module, action, params) {
-		if(typeof(handlers[module]) !== "undefined") {
-			var handler = handlers[module];
-			handler[0].call(handler[1], action, params);
+	function registerRoute(route, handler, obj) {
+		if(!route) {
+			return false;
+		}
+		
+		var params = route.split(fieldSeparator);
+		
+		if(typeof(handlers[params[0]]) === "undefined") {
+			handlers[params[0]] = [];
+		}
+		
+		var paramInfo = [];
+		var optionalCount = 0;
+		
+		params.forEach(function(param) {
+			var pI = {};
+			
+			// Is the parameter optional?
+			if(param[0] === '[' && param[param.length - 1] === ']') {
+				pI['optional'] = true;
+				++optionalCount;
+				// Remove the optionality chars
+				param = param.substr(1, param.length - 2);
+			} else {
+				pI['optional'] = false;
+			}
+			
+			// Is the parameter constant or a variable?
+			if(param[0] === '{' && param[param.length - 1] === '}') {
+				pI['variable'] = true;
+				// Remove the optionality chars
+				param = param.substr(1, param.length - 2);
+			} else {
+				pI['variable'] = false;
+			}
+			
+			pI['name'] = param;
+			paramInfo.push(pI);
+		});
+		
+		handlers[params[0]].push([paramInfo, optionalCount, handler, obj]);
+		
+		return handler;
+	}
+	
+	function redirect(url) {
+		var routeAndParams = findMatchingRoute(url);
+		
+		if(routeAndParams !== false) {
+			window.location.href = "#/" + url;
 			throw new Error("StopProcessingHandlerException");
 		} else {
-			forward("page", "notfound");
+			throw new Error("PageNotFound");
+		}
+	}
+	
+	function forward(url) {
+		var routeAndParams = findMatchingRoute(url);
+		
+		if(routeAndParams !== false) {
+			var route = routeAndParams[0];
+			var params = routeAndParams[1];
+			route[2].call(route[3], params);
+			throw new Error("StopProcessingHandlerException");
+		} else {
+			throw new Error("PageNotFound");
 		}
 	}
 	
@@ -69,30 +148,20 @@ var Gretel = (function() {
 		var url = window.location.href;
 		
 		if(url != lastQuery) {
-			var info = parseURL(url);
+			var parsedURL = parseURL(url);
 			
-			if(info.length >= 2) {
-				if(typeof(handlers[info[0]]) !== "undefined") {
-					var module = info.shift();
-					var action = info.shift();
-					var handler = handlers[module];
-					var handlerParams = handler[2];
-					var params = {};
+			var routeAndParams = findMatchingRoute(parsedURL);
+			
+			if(routeAndParams !== false) {
+				try {
+					var route = routeAndParams[0];
+					var params = routeAndParams[1];
 					
-					info.forEach(function(e, i) {
-						if(typeof(handlerParams[i]) !== "undefined" && handlerParams[i].length > 0 && e.length > 0) {
-							params[handlerParams[i]] = e;
-						}
-					});
-					
-					try {
-						handler[0].call(handler[1], action, params);
-					} catch(e) {
-						if(e.message != "StopProcessingHandlerException") {
-							throw e;
-						}
+					route[2].call(route[3], params);
+				} catch(e) {
+					if(e.message != "StopProcessingHandlerException") {
+						throw e;
 					}
-					
 				}
 			}
 			
