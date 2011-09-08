@@ -20,7 +20,7 @@ Meaning that the developer will be able to simply define routes and what to do w
 
 2. **Register your routes:**
 
-        Gretel.registerRoute("module_name", "params_separated_by_/", handler);
+        Gretel.registerRoute("this/is/a/route/with/a/{param}/and/an/[{optionalid}]", handler, thisObj);
 
 ## Example
 
